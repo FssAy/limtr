@@ -1,0 +1,109 @@
+use std::collections::HashMap;
+use std::sync::Arc;
+use tokio::sync::{Mutex, oneshot};
+use crate::back::entity::{Blocks, IndexMapLimtr};
+use crate::FeatureRaw;
+use crate::utils::time;
+
+
+pub(crate) type Callback<T> = oneshot::Sender<T>;
+
+#[derive(Copy, Clone, Default, Debug)]
+pub(crate) struct Usage {
+    calls: usize,
+    expiration: u64,
+}
+
+#[derive(Debug)]
+pub(crate) enum Directive {
+    SetLimit {
+        id: String,
+        feature: FeatureRaw,
+        seconds: u32,
+    },
+    UpdateLimit {
+        id: String,
+        feature: FeatureRaw,
+        max_calls: usize,
+        seconds: u32,
+        callback: Callback<u64>,
+    }
+}
+
+impl Directive {
+    pub async fn handle(self, index_map: &mut IndexMapLimtr) { match self {
+        Directive::SetLimit { id, feature, seconds } => {
+            let blocks = get_or_create_blocks(index_map, id);
+            tokio::spawn(async move {
+                let calls = 0;
+                let expiration = time::in_future(seconds);
+
+                let mut lock = blocks.lock().await;
+
+                if let Some(usage) = lock.get_mut(&feature) {
+                    usage.calls = calls;
+                    usage.expiration = expiration;
+                } else {
+                    lock.insert(feature, Usage {
+                        calls,
+                        expiration,
+                    });
+                }
+
+                drop(lock);
+            });
+        },
+        Directive::UpdateLimit { id, feature, max_calls, seconds, callback } => {
+            let blocks = get_or_create_blocks(index_map, id);
+            tokio::spawn(async move {
+                let mut lock = blocks.lock().await;
+
+                let mut exp = 0;
+                let now = time::now();
+
+                if let Some(usage) = lock.get_mut(&feature) {
+                    if usage.calls >= max_calls {
+                        usage.calls = 0;
+                        usage.expiration = time::from_point(now, seconds);
+                    } else if usage.expiration <= now {
+                        usage.calls = 1;
+                        usage.expiration = 0;
+                    } else {
+                        if usage.expiration == 0 {
+                            usage.calls += 1;
+                        }
+                    }
+
+                    exp = usage.expiration;
+                } else {
+                    lock.insert(feature, Usage {
+                        calls: 1,
+                        expiration: exp,
+                    });
+                }
+
+                drop(lock);
+
+                let _ = callback.send(exp);
+            });
+        },
+    } }
+}
+
+unsafe impl Send for Directive {}
+unsafe impl Sync for Directive {}
+
+fn get_or_create_blocks(index_map: &mut IndexMapLimtr, id: String) -> Blocks {
+    if let Some(blocks) = index_map.get(&id) {
+        blocks.clone()
+    } else {
+        let blocks = Arc::new(
+            Mutex::new(
+                HashMap::<FeatureRaw, Usage>::new()
+            )
+        );
+
+        index_map.insert(id, blocks.clone());
+        blocks
+    }
+}
