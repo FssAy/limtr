@@ -1,7 +1,5 @@
 use std::collections::HashMap;
-use std::future::Future;
 use std::sync::Arc;
-use std::sync::mpsc::RecvError;
 use once_cell::sync::OnceCell;
 use tokio::sync::Mutex;
 use tokio::task::JoinHandle;
@@ -24,7 +22,7 @@ pub(crate) fn run(buffer: usize) -> Limtr {
         let mut index_map = IndexMapLimtr::new();
 
         while let Some(directive) = rx.recv().await {
-            directive.handle(&mut index_map);
+            directive.handle(&mut index_map).await;
         }
 
         Err(Error::LimtrClosed)

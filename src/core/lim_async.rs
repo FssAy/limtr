@@ -1,4 +1,3 @@
-use std::sync::Arc;
 use tokio::sync::mpsc;
 use crate::back::*;
 use crate::Error;
@@ -10,7 +9,6 @@ use crate::Error;
 /// Initialize it using `Limtr::init` function.
 pub struct Limtr {
     pub(crate) tx: mpsc::Sender<Directive>,
-    // pub(crate) handle: Arc<JoinHandle<Result<(), Error>>>,
 }
 
 impl Limtr {
@@ -30,9 +28,7 @@ impl Limtr {
     ///         return;
     ///     }
     ///
-    ///     if Limtr::check() {
-    ///         println!("Limtr is running!")
-    ///     }
+    ///     // (...)
     /// }
     ///
     /// fn warmup() -> Result<(), Box<dyn std::error::Error>> {
@@ -43,13 +39,4 @@ impl Limtr {
         let limtr = entity::run(buffer);
         entity::LIMTR.set(limtr).map_err(|_| Error::LimtrClosed)
     }
-
-    //// Checks if the rate limiter is running.
-    // pub fn check() -> bool {
-    //     if let Some(limtr) = entity::LIMTR.get() {
-    //         !limtr.handle.is_finished()
-    //     } else {
-    //         false
-    //     }
-    // }
 }
