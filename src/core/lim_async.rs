@@ -1,6 +1,6 @@
 use tokio::sync::mpsc;
 use crate::back::*;
-use crate::Error;
+use crate::{Error, Feature};
 
 
 /// Main entity used for the communication with the rate limiter.
@@ -38,5 +38,37 @@ impl Limtr {
     pub async fn init(buffer: usize) -> Result<(), Error> {
         let limtr = entity::run(buffer);
         entity::LIMTR.set(limtr).map_err(|_| Error::LimtrClosed)
+    }
+
+    pub async fn set_limit(id: impl ToString, feature: impl Feature, seconds: u32) -> Result<(), Error> {
+        let limtr = Limtr::get()?;
+
+        limtr.tx.send(Directive::SetLimit {
+            id: id.to_string(),
+            feature: feature.into_feature(),
+            seconds,
+        }).await.map_err(|_| Error::LimtrClosed)
+    }
+
+    pub async fn update_limit(id: impl ToString, feature: impl Feature, seconds: u32, max_calls: usize) -> Result<u64, Error> {
+        let limtr = Limtr::get()?;
+
+        let (callback, listener) = tokio::sync::oneshot::channel();
+
+        limtr.tx.send(Directive::UpdateLimit {
+            id: id.to_string(),
+            feature: feature.into_feature(),
+            seconds,
+            max_calls,
+            callback,
+        }).await.map_err(|_| Error::LimtrClosed)?;
+
+        listener.await.map_err(|_| Error::CallbackCanceled)
+    }
+}
+
+impl Limtr {
+    fn get() -> Result<&'static Limtr, Error> {
+        entity::LIMTR.get().ok_or_else(|| Error::NotInitialized)
     }
 }
