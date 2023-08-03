@@ -18,9 +18,6 @@ features = [
     "macros",
 ]
 
-[dev-dependencies]
-lazy_static = "1.4.0"
-
 [features]
 default = ["async"]
 async = [

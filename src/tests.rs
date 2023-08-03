@@ -1,6 +1,7 @@
+#![allow(dead_code)]
+
 use std::future::Future;
 use std::time::Duration;
-use lazy_static::lazy_static;
 use tokio::time::sleep;
 use crate::{Error, Feature, FeatureRaw, Limtr};
 
