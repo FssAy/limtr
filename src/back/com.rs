@@ -12,6 +12,7 @@ pub(crate) type Callback<T> = oneshot::Sender<T>;
 pub(crate) struct Usage {
     calls: usize,
     expiration: u64,
+    last_call: u64,
 }
 
 #[derive(Debug)]
@@ -43,10 +44,12 @@ impl Directive {
                 if let Some(usage) = lock.get_mut(&feature) {
                     usage.calls = calls;
                     usage.expiration = expiration;
+                    usage.last_call = time::now();
                 } else {
                     lock.insert(feature, Usage {
                         calls,
                         expiration,
+                        last_call: time::now(),
                     });
                 }
 
@@ -65,12 +68,18 @@ impl Directive {
                     if usage.calls >= max_calls {
                         usage.calls = 0;
                         usage.expiration = time::from_point(now, seconds);
-                    } else if usage.expiration <= now {
+                        usage.last_call = now;
+                    } else if usage.expiration <= now && usage.expiration != 0 {
                         usage.calls = 1;
                         usage.expiration = 0;
+                        usage.last_call = now;
+                    } else if time::from_point(usage.last_call, seconds) <= now && usage.expiration == 0 {
+                        usage.calls = 0;
+                        usage.last_call = now;
                     } else {
                         if usage.expiration == 0 {
                             usage.calls += 1;
+                            usage.last_call = now;
                         }
                     }
 
@@ -79,6 +88,7 @@ impl Directive {
                     lock.insert(feature, Usage {
                         calls: 1,
                         expiration: exp,
+                        last_call: now,
                     });
                 }
 
