@@ -12,6 +12,10 @@ pub struct Limtr {
 }
 
 impl Limtr {
+    fn get() -> Result<&'static Limtr, Error> {
+        entity::LIMTR.get().ok_or_else(|| Error::NotInitialized)
+    }
+
     /// Initializes the Limtr entity.
     ///
     /// Call this function once in the warmup phase of your application.
@@ -42,20 +46,34 @@ impl Limtr {
 
     pub async fn set_limit(id: impl ToString, feature: impl Feature, seconds: u32) -> Result<(), Error> {
         let limtr = Limtr::get()?;
+        limtr.set_limit_local(id, feature, seconds).await
+    }
 
-        limtr.tx.send(Directive::SetLimit {
+    pub async fn update_limit(id: impl ToString, feature: impl Feature, seconds: u32, max_calls: usize) -> Result<u64, Error> {
+        let limtr = Limtr::get()?;
+        limtr.update_limit_local(id, feature, seconds, max_calls).await
+    }
+}
+
+impl Limtr {
+    /// Creates a new detached local Limtr instance.
+    pub fn new(buffer: usize) -> Limtr {
+        let limtr = entity::run(buffer);
+        limtr
+    }
+
+    pub async fn set_limit_local(&self, id: impl ToString, feature: impl Feature, seconds: u32) -> Result<(), Error> {
+        self.tx.send(Directive::SetLimit {
             id: id.to_string(),
             feature: feature.into_feature(),
             seconds,
         }).await.map_err(|_| Error::LimtrClosed)
     }
 
-    pub async fn update_limit(id: impl ToString, feature: impl Feature, seconds: u32, max_calls: usize) -> Result<u64, Error> {
-        let limtr = Limtr::get()?;
-
+    pub async fn update_limit_local(&self, id: impl ToString, feature: impl Feature, seconds: u32, max_calls: usize) -> Result<u64, Error> {
         let (callback, listener) = tokio::sync::oneshot::channel();
 
-        limtr.tx.send(Directive::UpdateLimit {
+        self.tx.send(Directive::UpdateLimit {
             id: id.to_string(),
             feature: feature.into_feature(),
             seconds,
@@ -64,11 +82,5 @@ impl Limtr {
         }).await.map_err(|_| Error::LimtrClosed)?;
 
         listener.await.map_err(|_| Error::CallbackCanceled)
-    }
-}
-
-impl Limtr {
-    fn get() -> Result<&'static Limtr, Error> {
-        entity::LIMTR.get().ok_or_else(|| Error::NotInitialized)
     }
 }
