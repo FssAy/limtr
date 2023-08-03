@@ -14,7 +14,12 @@ optional = true
 features = [
     "sync",
     "rt-multi-thread",
+    "test-util",
+    "macros",
 ]
+
+[dev-dependencies]
+lazy_static = "1.4.0"
 
 [features]
 default = ["async"]
