@@ -65,6 +65,28 @@ impl<K: Hash + Default + Eq + PartialEq, V: Default> IndexMap<K, V> {
         self.values.get(index).unwrap().as_ref()
     }
 
+    #[allow(dead_code)]
+    pub fn clear(&mut self) {
+        if self.nuked.is_empty() {
+            return;
+        }
+
+        self.nuked.sort_unstable();
+
+        self.values.retain(|maybe_value| {
+            maybe_value.is_some()
+        });
+
+        let min_index_nuked = *self.nuked.first().unwrap();
+        for index in self.keys.values_mut() {
+            if *index >= min_index_nuked {
+                *index -= self.nuked.iter().take_while(|&&index_nuked| index_nuked < *index).count();
+            }
+        }
+
+        self.nuked.clear();
+    }
+
     /*pub fn get_mut(&mut self, key: &K) -> Option<&mut V> {
         let index = *self.keys.get(key)?;
         self.values.get_mut(index).unwrap().as_mut()
