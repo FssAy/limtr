@@ -22,7 +22,8 @@ impl<K: Hash + Default + Eq + PartialEq, V: Default> IndexMap<K, V> {
         }
     }*/
 
-    /*pub fn remove(&mut self, key: &K) -> Option<V> {
+    #[allow(dead_code)]
+    pub fn remove(&mut self, key: &K) -> Option<V> {
         if let Some(index) = self.keys.remove(key) {
             let maybe_value = self.values.get_mut(index).unwrap();
             let value = std::mem::take(maybe_value).unwrap();
@@ -31,7 +32,7 @@ impl<K: Hash + Default + Eq + PartialEq, V: Default> IndexMap<K, V> {
         } else {
             None
         }
-    }*/
+    }
 
     pub fn insert(&mut self, key: K, value: V) -> Option<V> {
         if let Some(old_index) = self.keys.get(&key) {
