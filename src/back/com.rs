@@ -28,7 +28,8 @@ pub(crate) enum Directive {
         max_calls: usize,
         seconds: u32,
         callback: Callback<u64>,
-    }
+    },
+    Clear,
 }
 
 impl Directive {
@@ -97,6 +98,9 @@ impl Directive {
                 let _ = callback.send(exp);
             });
         },
+        Directive::Clear => {
+            index_map.clear_all();
+        }
     } }
 }
 

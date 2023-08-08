@@ -53,6 +53,11 @@ impl Limtr {
         let limtr = Limtr::get()?;
         limtr.update_limit_local(id, feature, seconds, max_calls).await
     }
+
+    pub async fn clear_all() -> Result<(), Error> {
+        let limtr = Limtr::get()?;
+        limtr.clear_all_local().await
+    }
 }
 
 impl Limtr {
@@ -82,5 +87,12 @@ impl Limtr {
         }).await.map_err(|_| Error::LimtrClosed)?;
 
         listener.await.map_err(|_| Error::CallbackCanceled)
+    }
+
+    pub async fn clear_all_local(&self) -> Result<(), Error> {
+        self.tx
+            .send(Directive::Clear)
+            .await
+            .map_err(|_| Error::LimtrClosed)
     }
 }

@@ -88,6 +88,12 @@ impl<K: Hash + Default + Eq + PartialEq, V: Default> IndexMap<K, V> {
         self.nuked.clear();
     }
 
+    pub fn clear_all(&mut self) {
+        self.nuked.clear();
+        self.values.clear();
+        self.keys.clear();
+    }
+
     /*pub fn get_mut(&mut self, key: &K) -> Option<&mut V> {
         let index = *self.keys.get(key)?;
         self.values.get_mut(index).unwrap().as_mut()
