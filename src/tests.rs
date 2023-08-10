@@ -114,7 +114,7 @@ async fn block_check() {
 
     const ID: &'static str = "block_check";
     const FEATURE: F = F::A;
-    const SECONDS: u32 = 10;
+    const SECONDS: u32 = 3;
     const MAX_CALLS: usize = 2;
 
     assert_eq!(limtr.get_limit_local(ID, FEATURE).await.unwrap(), 0);
@@ -137,4 +137,8 @@ async fn block_check() {
     ).await;
 
     assert_ne!(limtr.get_limit_local(ID, FEATURE).await.unwrap(), 0);
+
+    sleep(Duration::from_secs(SECONDS as _)).await;
+
+    assert_eq!(limtr.get_limit_local(ID, FEATURE).await.unwrap(), 0);
 }

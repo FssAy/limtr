@@ -110,7 +110,9 @@ impl Directive {
                     let mut exp = 0;
 
                     if let Some(usage) = lock.get(&feature) {
-                        exp = usage.expiration;
+                        if time::now() < usage.expiration {
+                            exp = usage.expiration;
+                        }
                     }
 
                     let _ = callback.send(exp);
