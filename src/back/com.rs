@@ -106,15 +106,11 @@ impl Directive {
         Directive::GetLimit { id, feature, callback } => {
             if let Some(blocks) = index_map.get(&id).map(Arc::clone) {
                 tokio::spawn(async move {
-                    let mut lock = blocks.lock().await;
+                    let lock = blocks.lock().await;
                     let mut exp = 0;
 
                     if let Some(usage) = lock.get(&feature) {
                         exp = usage.expiration;
-                    }
-
-                    if exp == 0 {
-                        lock.remove(&feature);
                     }
 
                     let _ = callback.send(exp);
