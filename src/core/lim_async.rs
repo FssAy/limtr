@@ -54,6 +54,11 @@ impl Limtr {
         limtr.update_limit_local(id, feature, seconds, max_calls).await
     }
 
+    pub async fn get_limit(id: impl ToString, feature: impl Feature) -> Result<u64, Error> {
+        let limtr = Limtr::get()?;
+        limtr.get_limit_local(id, feature).await
+    }
+
     pub async fn clear_all() -> Result<(), Error> {
         let limtr = Limtr::get()?;
         limtr.clear_all_local().await
@@ -83,6 +88,18 @@ impl Limtr {
             feature: feature.into_feature(),
             seconds,
             max_calls,
+            callback,
+        }).await.map_err(|_| Error::LimtrClosed)?;
+
+        listener.await.map_err(|_| Error::CallbackCanceled)
+    }
+
+    pub async fn get_limit_local(&self, id: impl ToString, feature: impl Feature) -> Result<u64, Error> {
+        let (callback, listener) = tokio::sync::oneshot::channel();
+
+        self.tx.send(Directive::GetLimit {
+            id: id.to_string(),
+            feature: feature.into_feature(),
             callback,
         }).await.map_err(|_| Error::LimtrClosed)?;
 

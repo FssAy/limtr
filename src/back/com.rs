@@ -29,6 +29,11 @@ pub(crate) enum Directive {
         seconds: u32,
         callback: Callback<u64>,
     },
+    GetLimit {
+        id: String,
+        feature: FeatureRaw,
+        callback: Callback<u64>,
+    },
     Clear,
 }
 
@@ -98,6 +103,26 @@ impl Directive {
                 let _ = callback.send(exp);
             });
         },
+        Directive::GetLimit { id, feature, callback } => {
+            if let Some(blocks) = index_map.get(&id).map(Arc::clone) {
+                tokio::spawn(async move {
+                    let mut lock = blocks.lock().await;
+                    let mut exp = 0;
+
+                    if let Some(usage) = lock.get(&feature) {
+                        exp = usage.expiration;
+                    }
+
+                    if exp == 0 {
+                        lock.remove(&feature);
+                    }
+
+                    let _ = callback.send(exp);
+                });
+            } else {
+                let _ = callback.send(0);
+            }
+        }
         Directive::Clear => {
             index_map.clear_all();
         }
