@@ -107,3 +107,34 @@ async fn clear_calls() {
         false,
     ).await;
 }
+
+#[tokio::test]
+async fn block_check() {
+    let limtr = Limtr::new(16);
+
+    const ID: &'static str = "block_check";
+    const FEATURE: F = F::A;
+    const SECONDS: u32 = 10;
+    const MAX_CALLS: usize = 2;
+
+    assert_eq!(limtr.get_limit_local(ID, FEATURE).await.unwrap(), 0);
+
+    validate_update(
+        limtr.update_limit_local(ID, FEATURE, SECONDS, MAX_CALLS),
+        false,
+    ).await;
+
+    assert_eq!(limtr.get_limit_local(ID, FEATURE).await.unwrap(), 0);
+
+    validate_update(
+        limtr.update_limit_local(ID, FEATURE, SECONDS, MAX_CALLS),
+        false,
+    ).await;
+
+    validate_update(
+        limtr.update_limit_local(ID, FEATURE, SECONDS, MAX_CALLS),
+        true,
+    ).await;
+
+    assert_ne!(limtr.get_limit_local(ID, FEATURE).await.unwrap(), 0);
+}
