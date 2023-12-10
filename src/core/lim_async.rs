@@ -7,6 +7,7 @@ use crate::{Error, Feature};
 ///
 /// There can be only one instance of Limtr in the process lifetime.
 /// Initialize it using `Limtr::init` function.
+#[derive(Clone)]
 pub struct Limtr {
     pub(crate) tx: mpsc::Sender<Directive>,
 }
