@@ -20,15 +20,12 @@ mod back {
 mod utils {
     pub mod error;
     mod index_map;
+    mod feature;
     pub(crate) mod time;
 
     pub(crate) use index_map::*;
 
-    pub type FeatureRaw = u16;
-
-    pub trait Feature {
-        fn into_feature(self) -> FeatureRaw;
-    }
+    pub use feature::*;
 }
 
 pub use crate::core::*;
