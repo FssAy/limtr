@@ -122,7 +122,7 @@ impl Directive {
             }
         }
         Directive::Clear => {
-            index_map.clear_all();
+            index_map.clear();
         }
     } }
 }

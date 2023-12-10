@@ -19,11 +19,8 @@ mod back {
 
 mod utils {
     pub mod error;
-    mod index_map;
     mod feature;
     pub(crate) mod time;
-
-    pub(crate) use index_map::*;
 
     pub use feature::*;
 }

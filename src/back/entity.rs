@@ -5,7 +5,7 @@ use tokio::sync::Mutex;
 use tokio::task::JoinHandle;
 use crate::back::*;
 use crate::{Error, FeatureRaw, Limtr};
-use crate::utils::IndexMap;
+use indexmap::IndexMap;
 
 
 pub(crate) type Blocks = Arc<Mutex<HashMap<FeatureRaw, Usage>>>;
