@@ -22,8 +22,16 @@ features = [
     "macros",
 ]
 
+[dev-dependencies]
+once_cell = "1.18.0"
+criterion = { version = "0.5.1", features = ["async_tokio"] }
+
 [features]
 default = ["async"]
 async = [
     "tokio",
 ]
+
+[[bench]]
+name = "benchmark"
+harness = false
