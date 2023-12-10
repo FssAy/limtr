@@ -1,6 +1,6 @@
 [package]
 name = "limtr"
-version = "0.1.7"
+version = "0.2.0"
 edition = "2021"
 authors = ["FssAy"]
 description = "Implement rate limits for all sort of applications and scenarios."
